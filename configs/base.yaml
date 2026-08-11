@@ -1,0 +1,14 @@
+project:
+  name: flightops-ml
+  random_seed: 42
+
+data:
+  target: departure_delay_15min
+  raw_dir: data/raw
+  processed_dir: data/processed
+
+split:
+  strategy: chronological
+  train_fraction: 0.70
+  validation_fraction: 0.15
+  test_fraction: 0.15
