@@ -38,7 +38,28 @@ flightops-ml/
 ├── pyproject.toml
 └── Makefile
 ```
+## Data
 
+FlightOps ML uses the U.S. Department of Transportation Bureau
+of Transportation Statistics Reporting Carrier On-Time
+Performance dataset.
+
+The initial benchmark uses the complete 2025 calendar year.
+
+The primary target is:
+
+`departure_delay_15min`
+
+which indicates whether an operated flight departed at least
+15 minutes after its scheduled departure time.
+
+See:
+
+- [`docs/data_source.md`](docs/data_source.md)
+- [`docs/data_dictionary.md`](docs/data_dictionary.md)
+
+for the data contract, field definitions, and leakage policy.
+    
 ## Quick start
 ```bash
 python -m venv .venv
