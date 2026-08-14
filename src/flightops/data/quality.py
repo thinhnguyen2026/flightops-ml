@@ -167,3 +167,148 @@ def basic_quality_summary(
             invalid_times
         ),
     }
+
+def target_consistency_summary(
+    frame: pd.DataFrame,
+) -> dict[str, Any]:
+    """Validate delay target and cancellation behavior."""
+
+    required = {
+        "departure_delay_minutes",
+        "bts_departure_delay_15min",
+        "cancelled",
+    }
+
+    missing = sorted(
+        required.difference(
+            frame.columns
+        )
+    )
+
+    if missing:
+        raise ValueError(
+            "Target quality checks require "
+            f"columns: {', '.join(missing)}"
+        )
+
+    delay_minutes = pd.to_numeric(
+        frame["departure_delay_minutes"],
+        errors="coerce",
+    )
+
+    bts_target = pd.to_numeric(
+        frame[
+            "bts_departure_delay_15min"
+        ],
+        errors="coerce",
+    )
+
+    cancellation = pd.to_numeric(
+        frame["cancelled"],
+        errors="coerce",
+    )
+
+    cancelled_mask = cancellation.eq(1)
+    operated_mask = cancellation.eq(0)
+
+    unknown_cancellation_mask = ~(
+        cancelled_mask
+        | operated_mask
+    )
+
+    comparable_mask = (
+        operated_mask
+        & delay_minutes.notna()
+        & bts_target.notna()
+    )
+
+    derived_target = (
+        delay_minutes.ge(15)
+        .astype(int)
+    )
+
+    comparison = (
+        derived_target[
+            comparable_mask
+        ]
+        != bts_target[
+            comparable_mask
+        ].astype(int)
+    )
+
+    mismatch_count = int(
+        comparison.sum()
+    )
+
+    comparable_rows = int(
+        comparable_mask.sum()
+    )
+
+    mismatch_rate = (
+        round(
+            mismatch_count
+            / comparable_rows,
+            6,
+        )
+        if comparable_rows
+        else 0.0
+    )
+
+    cancelled_with_delay = int(
+        (
+            cancelled_mask
+            & delay_minutes.notna()
+        ).sum()
+    )
+
+    operated_missing_delay = int(
+        (
+            operated_mask
+            & delay_minutes.isna()
+        ).sum()
+    )
+
+    return {
+        "operated_rows": int(
+            operated_mask.sum()
+        ),
+        "cancelled_rows": int(
+            cancelled_mask.sum()
+        ),
+        "unknown_cancellation_rows": int(
+            unknown_cancellation_mask.sum()
+        ),
+        "comparable_target_rows": (
+            comparable_rows
+        ),
+        "target_mismatches": (
+            mismatch_count
+        ),
+        "target_mismatch_rate": (
+            mismatch_rate
+        ),
+        "cancelled_rows_with_delay_value": (
+            cancelled_with_delay
+        ),
+        "operated_rows_missing_delay": (
+            operated_missing_delay
+        ),
+    }
+
+
+def build_quality_report(
+    frame: pd.DataFrame,
+) -> dict[str, Any]:
+    """Build complete monthly data-quality report."""
+
+    report = basic_quality_summary(
+        frame
+    )
+
+    report["target_consistency"] = (
+        target_consistency_summary(
+            frame
+        )
+    )
+
+    return report
