@@ -59,7 +59,17 @@ See:
 - [`docs/data_dictionary.md`](docs/data_dictionary.md)
 
 for the data contract, field definitions, and leakage policy.
-    
+
+### Monthly ingestion
+
+Monthly BTS files can be ingested with:
+
+```bash
+python -m flightops.data.ingest \
+  --input data/raw/bts/2025/01/<source-file>.zip \
+  --year 2025 \
+  --month 1
+  
 ## Quick start
 ```bash
 python -m venv .venv
