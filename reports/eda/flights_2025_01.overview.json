@@ -1,0 +1,14 @@
+{
+  "source_file": "flights_2025_01.parquet",
+  "total_rows": 539747,
+  "operated_rows": 523435,
+  "cancelled_rows": 16312,
+  "unknown_cancellation_rows": 0,
+  "modeling_rows": 523435,
+  "delayed_15min_rows": 95432,
+  "on_time_rows": 428003,
+  "delay_rate_15min": 0.182319,
+  "mean_departure_delay_minutes": 14.029,
+  "median_departure_delay_minutes": 0.0,
+  "p90_departure_delay_minutes": 37.0
+}
