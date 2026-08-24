@@ -154,3 +154,109 @@ def overview_summary(
             else None
         ),
     }
+
+def delay_by_group(
+    frame: pd.DataFrame,
+    group_column: str,
+    min_flights: int = 1,
+) -> pd.DataFrame:
+    """Summarize departure delay by a grouping column."""
+
+    required = {
+        group_column,
+        "cancelled",
+        "departure_delay_minutes",
+    }
+
+    missing = sorted(
+        required.difference(frame.columns)
+    )
+
+    if missing:
+        raise ValueError(
+            "Grouped delay analysis requires "
+            f"columns: {', '.join(missing)}"
+        )
+
+    modeling_mask = modeling_population_mask(frame)
+
+    delay = pd.to_numeric(
+        frame["departure_delay_minutes"],
+        errors="coerce",
+    )
+
+    group_values = frame[group_column]
+
+    valid_mask = (
+        modeling_mask
+        & group_values.notna()
+    )
+
+    work = pd.DataFrame(
+        {
+            group_column: group_values[valid_mask],
+            "departure_delay_minutes": delay[valid_mask],
+        }
+    )
+
+    work["delayed_15min"] = (
+        work["departure_delay_minutes"] >= 15
+    ).astype(int)
+
+    summary = (
+        work.groupby(
+            group_column,
+            dropna=False,
+        )
+        .agg(
+            flights=(
+                "departure_delay_minutes",
+                "size",
+            ),
+            delayed_15min=(
+                "delayed_15min",
+                "sum",
+            ),
+            mean_delay_minutes=(
+                "departure_delay_minutes",
+                "mean",
+            ),
+            median_delay_minutes=(
+                "departure_delay_minutes",
+                "median",
+            ),
+        )
+        .reset_index()
+    )
+
+    summary["delay_rate_15min"] = (
+        summary["delayed_15min"]
+        / summary["flights"]
+    )
+
+    summary = summary[
+        summary["flights"] >= min_flights
+    ].copy()
+
+    summary["delay_rate_15min"] = (
+        summary["delay_rate_15min"].round(6)
+    )
+
+    summary["mean_delay_minutes"] = (
+        summary["mean_delay_minutes"].round(3)
+    )
+
+    summary["median_delay_minutes"] = (
+        summary["median_delay_minutes"].round(3)
+    )
+
+    return summary.sort_values(
+        [
+            "delay_rate_15min",
+            "flights",
+        ],
+        ascending=[
+            False,
+            False,
+        ],
+    ).reset_index(drop=True)
