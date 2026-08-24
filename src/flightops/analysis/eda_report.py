@@ -28,9 +28,7 @@ def _render_group_table(
         "|---|---:|---:|---:|",
     ]
 
-    for _, row in frame.head(
-        limit
-    ).iterrows():
+    for _, row in frame.head(limit).iterrows():
         lines.append(
             "| "
             f"{row[group_column]} | "
@@ -58,28 +56,16 @@ def render_markdown_report(
         "",
         "## Dataset Overview",
         "",
+        f"- Total rows: {overview['total_rows']:,}",
+        f"- Operated flights: {overview['operated_rows']:,}",
+        f"- Cancelled flights: {overview['cancelled_rows']:,}",
+        f"- Modeling rows: {overview['modeling_rows']:,}",
         (
-            f"- Total rows: "
-            f"{overview['total_rows']:,}"
-        ),
-        (
-            f"- Operated flights: "
-            f"{overview['operated_rows']:,}"
-        ),
-        (
-            f"- Cancelled flights: "
-            f"{overview['cancelled_rows']:,}"
-        ),
-        (
-            f"- Modeling rows: "
-            f"{overview['modeling_rows']:,}"
-        ),
-        (
-            f"- Flights delayed >=15 min: "
+            "- Flights delayed >=15 min: "
             f"{overview['delayed_15min_rows']:,}"
         ),
         (
-            f"- Delay rate >=15 min: "
+            "- Delay rate >=15 min: "
             f"{overview['delay_rate_15min']:.2%}"
         ),
         (
@@ -121,17 +107,15 @@ def render_markdown_report(
         )
     )
 
-    hour_ranked = (
-        departure_hour.sort_values(
-            [
-                "delay_rate_15min",
-                "flights",
-            ],
-            ascending=[
-                False,
-                False,
-            ],
-        )
+    hour_ranked = departure_hour.sort_values(
+        [
+            "delay_rate_15min",
+            "flights",
+        ],
+        ascending=[
+            False,
+            False,
+        ],
     )
 
     lines.extend(
@@ -188,13 +172,9 @@ def write_eda_outputs(
             f"Input parquet not found: {input_path}"
         )
 
-    frame = pd.read_parquet(
-        input_path
-    )
+    frame = pd.read_parquet(input_path)
 
-    overview = overview_summary(
-        frame
-    )
+    overview = overview_summary(frame)
 
     carrier = delay_by_group(
         frame,
@@ -208,10 +188,8 @@ def write_eda_outputs(
         min_flights=100,
     )
 
-    departure_hour = (
-        departure_hour_summary(
-            frame
-        )
+    departure_hour = departure_hour_summary(
+        frame
     )
 
     daily = daily_delay_summary(
