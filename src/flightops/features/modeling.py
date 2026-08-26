@@ -254,3 +254,83 @@ def build_modeling_dataset(
         :,
         columns,
     ].copy()
+
+def chronological_split(
+    frame: pd.DataFrame,
+    train_end: str = "2025-01-21",
+    validation_end: str = "2025-01-26",
+) -> dict[str, pd.DataFrame]:
+    """Split a modeling dataset chronologically."""
+
+    if "flight_date" not in frame.columns:
+        raise ValueError(
+            "flight_date is required for "
+            "chronological splitting"
+        )
+
+    dates = pd.to_datetime(
+        frame["flight_date"],
+        errors="coerce",
+    )
+
+    if dates.isna().any():
+        raise ValueError(
+            "Cannot split dataset with "
+            "invalid flight dates"
+        )
+
+    train_boundary = pd.Timestamp(
+        train_end
+    )
+
+    validation_boundary = pd.Timestamp(
+        validation_end
+    )
+
+    if (
+        validation_boundary
+        <= train_boundary
+    ):
+        raise ValueError(
+            "validation_end must be "
+            "after train_end"
+        )
+
+    train = frame.loc[
+        dates <= train_boundary
+    ].copy()
+
+    validation = frame.loc[
+        (
+            dates > train_boundary
+        )
+        & (
+            dates
+            <= validation_boundary
+        )
+    ].copy()
+
+    test = frame.loc[
+        dates > validation_boundary
+    ].copy()
+
+    splits = {
+        "train": train,
+        "validation": validation,
+        "test": test,
+    }
+
+    for name, split in splits.items():
+        if split.empty:
+            raise ValueError(
+                f"{name} split is empty"
+            )
+
+    return {
+        name: split.reset_index(
+            drop=True
+        )
+        for name, split in splits.items()
+    }
+
+
